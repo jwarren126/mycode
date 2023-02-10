@@ -1,0 +1,81 @@
+- name: Build the Go webserver
+  hosts: webserver
+
+  tasks:
+
+    - name: Enable EPEL Repository on CentOS 8
+      dnf:
+        name: epel-release
+        state: latest
+      become: True
+      when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '8'
+
+    - name: Enable EPEL Repository on CentOS 7
+      yum:
+        name: epel-release
+        state: latest
+      become: True
+      when: ansible_facts['os_family'] == 'RedHat' and ansible_facts['distribution_major_version'] == '7'
+
+    - name: Copy go.mod
+      copy:
+        src: go.mod
+        dest: go.mod
+
+    - name: Copy go.sum
+      copy:
+        src: go.sum
+        dest: go.sum
+
+    - name: Copy main.go
+      copy:
+        src: main.go
+        dest: main.go
+
+    - name: install go
+      apt:
+        name: golang
+        state: present
+      when: ansible_os_family == "Debian"
+
+    - name: install go
+      yum:
+        name: golang
+        state: present
+      when: ansible_os_family == "RedHat"
+
+
+    - name: display go command success
+      command: go version
+      register: results
+
+    - name: Show go results
+      debug:
+        var: results
+
+    - name: Run go commands
+      command: go mod download
+
+    - name: Run go build
+      command: go build -o /dockergo
+
+    - name: Remove go
+      apt:
+        name: golang
+        state: absent
+      when: ansible_os_family == "Debian"
+
+    - name: Remove go
+      yum:
+        name: golang
+        state: absent
+      when: ansible_os_family == "RedHat"
+
+    - name: whats up
+      command: ls
+      register: results
+
+    - name: display
+      debug:
+        var: results
+
